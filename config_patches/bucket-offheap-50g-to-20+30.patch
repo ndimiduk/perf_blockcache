@@ -1,0 +1,73 @@
+diff -rupN bucket-offheap-50g/hbase-env.sh bucket-offheap-50g-20+30/hbase-env.sh
+--- bucket-offheap-50g/hbase-env.sh	2014-01-09 17:05:39.000000000 -0800
++++ bucket-offheap-50g-20+30/hbase-env.sh	2014-01-15 15:37:45.000000000 -0800
+@@ -45,7 +45,7 @@ export SERVER_GC_OPTS="-verbose:gc -XX:+
+ #
+ # export HBASE_JMX_BASE="-Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+ export HBASE_MASTER_OPTS="-Xmx1024m"
+-export HBASE_REGIONSERVER_OPTS="-Xmn200m -XX:CMSInitiatingOccupancyFraction=70  -Xms1024m -Xmx12500m -XX:MaxDirectMemorySize=37564m -Xloggc:/grid/0/var/log/hbase/rs.gc.log-`date +'%Y%m%d%H%M'`"
++export HBASE_REGIONSERVER_OPTS="-Xmn200m -XX:CMSInitiatingOccupancyFraction=70  -Xms1024m -Xmx20000m -XX:MaxDirectMemorySize=30064m -Xloggc:/grid/0/var/log/hbase/rs.gc.log-`date +'%Y%m%d%H%M'`"
+ # export HBASE_THRIFT_OPTS="$HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10103"
+ # export HBASE_ZOOKEEPER_OPTS="$HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10104"
+ 
+diff -rupN bucket-offheap-50g/hbase-site.xml bucket-offheap-50g-20+30/hbase-site.xml
+--- bucket-offheap-50g/hbase-site.xml	2014-01-09 17:07:53.000000000 -0800
++++ bucket-offheap-50g-20+30/hbase-site.xml	2014-01-15 15:38:33.000000000 -0800
+@@ -24,16 +24,6 @@
+     <name>hbase.hregion.memstore.block.multiplier</name>
+     <value>2</value>
+   </property>
+-  <property>
+-    <!-- 12500m * 0.8 = 10000m -->
+-    <name>hbase.regionserver.global.memstore.upperLimit</name>
+-    <value>0.79</value>
+-  </property>
+-  <property>
+-    <!-- 12500m * 0.72 = 9000m -->
+-    <name>hbase.regionserver.global.memstore.lowerLimit</name>
+-    <value>0.72</value>
+-  </property>
+     <property>
+     <name>zookeeper.session.timeout</name>
+     <value>30000</value>
+@@ -51,11 +41,6 @@
+     <value>cn036.l42scl.hortonworks.com</value>
+   </property>
+   <property>
+-    <!-- mostly disable LruBlockCache -->
+-    <name>hfile.block.cache.size</name>
+-    <value>0.01</value>
+-  </property>
+-  <property>
+     <!-- disable slabcache -->
+     <name>hbase.offheapcachesize</name>
+     <value>0</value>
+@@ -65,14 +50,24 @@
+     <value>offheap</value>
+   </property>
+   <property>
+-    <!-- minimize the size of the LruBlockCache instance forced upon us -->
++    <!--
++        This configuration is targeting 50000m total memory footprint, divided
++        into 20000m heap + 30000m off-heap. Default hfile.block.cache.size is
++        0.4. However, that this config is ignored by CacheConfig when
++        BucketCache is enabled. Thus, 20000m * 0.4 = 8000m this is our target
++        LruBlockCache size. We calculate our target 8000m LruBlockCache
++        percentage as (30000m + 8000m) * x = 8000m, or 0.21. The final
++        BuckeCache component is sized as 1.0 - 0.21 or 0.79.
++    -->
+     <name>hbase.bucketcache.percentage.in.combinedcache</name>
+-    <value>0.99</value>
++    <value>0.79</value>
+   </property>
+   <property>
+-    <!-- 50000m * 0.6 = 30000m -->
++    <!--
++        Note this value is the combined size of L1 + L2 caches.
++    -->
+     <name>hbase.bucketcache.size</name>
+-    <value>30000</value>
++    <value>38000</value>
+   </property>
+   <property>
+     <name>hbase.hstore.compactionThreshold</name>

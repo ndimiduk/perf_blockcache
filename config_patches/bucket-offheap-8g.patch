@@ -1,0 +1,617 @@
+diff -rupN /grid/1/ndimiduk/hbase/conf/hadoop-metrics2-hbase.properties bucket-offheap-8g/hadoop-metrics2-hbase.properties
+--- /grid/1/ndimiduk/hbase/conf/hadoop-metrics2-hbase.properties	2013-12-30 13:19:18.382255818 -0800
++++ bucket-offheap-8g/hadoop-metrics2-hbase.properties	2014-01-09 11:33:21.955234763 -0800
+@@ -1,28 +1,62 @@
+-# syntax: [prefix].[source|sink].[instance].[options]
+-# See javadoc of package-info.java for org.apache.hadoop.metrics2 for details
++# Licensed to the Apache Software Foundation (ASF) under one or more
++# contributor license agreements. See the NOTICE file distributed with
++# this work for additional information regarding copyright ownership.
++# The ASF licenses this file to You under the Apache License, Version 2.0
++# (the "License"); you may not use this file except in compliance with
++# the License. You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++# See http://wiki.apache.org/hadoop/GangliaMetrics
++#
++# Make sure you know whether you are using ganglia 3.0 or 3.1.
++# If 3.1, you will have to patch your hadoop instance with HADOOP-4675
++# And, yes, this file is named hadoop-metrics.properties rather than
++# hbase-metrics.properties because we're leveraging the hadoop metrics
++# package and hadoop-metrics.properties is an hardcoded-name, at least
++# for the moment.
++#
++# See also http://hadoop.apache.org/hbase/docs/current/metrics.html
++
++# HBase-specific configuration to reset long-running stats (e.g. compactions)
++# If this variable is left out, then the default is no expiration.
++hbase.extendedperiod = 3600
++
++# Configuration of the "hbase" context for ganglia
++# Pick one: Ganglia 3.0 (former) or Ganglia 3.1 (latter)
++# hbase.class=org.apache.hadoop.metrics.ganglia.GangliaContext
++hbase.class=org.apache.hadoop.metrics.ganglia.GangliaContext31
++hbase.period=10
++hbase.servers=cn036.l42scl.hortonworks.com:8660
++
++# Configuration of the "jvm" context for ganglia
++# Pick one: Ganglia 3.0 (former) or Ganglia 3.1 (latter)
++# jvm.class=org.apache.hadoop.metrics.ganglia.GangliaContext
++jvm.class=org.apache.hadoop.metrics.ganglia.GangliaContext31
++jvm.period=10
++jvm.servers=cn036.l42scl.hortonworks.com:8660
++
++# Configuration of the "rpc" context for ganglia
++# Pick one: Ganglia 3.0 (former) or Ganglia 3.1 (latter)
++# rpc.class=org.apache.hadoop.metrics.ganglia.GangliaContext
++rpc.class=org.apache.hadoop.metrics.ganglia.GangliaContext31
++rpc.period=10
++rpc.servers=cn036.l42scl.hortonworks.com:8660
++
++#Ganglia following hadoop example
++hbase.sink.ganglia.class=org.apache.hadoop.metrics2.sink.ganglia.GangliaSink31
++hbase.sink.ganglia.period=10
+ 
+-*.sink.file*.class=org.apache.hadoop.metrics2.sink.FileSink
+-# default sampling period
+-*.period=10
+-
+-# Below are some examples of sinks that could be used
+-# to monitor different hbase daemons.
+-
+-# hbase.sink.file-all.class=org.apache.hadoop.metrics2.sink.FileSink
+-# hbase.sink.file-all.filename=all.metrics
+-
+-# hbase.sink.file0.class=org.apache.hadoop.metrics2.sink.FileSink
+-# hbase.sink.file0.context=hmaster
+-# hbase.sink.file0.filename=master.metrics
+-
+-# hbase.sink.file1.class=org.apache.hadoop.metrics2.sink.FileSink
+-# hbase.sink.file1.context=thrift-one
+-# hbase.sink.file1.filename=thrift-one.metrics
+-
+-# hbase.sink.file2.class=org.apache.hadoop.metrics2.sink.FileSink
+-# hbase.sink.file2.context=thrift-two
+-# hbase.sink.file2.filename=thrift-one.metrics
+-
+-# hbase.sink.file3.class=org.apache.hadoop.metrics2.sink.FileSink
+-# hbase.sink.file3.context=rest
+-# hbase.sink.file3.filename=rest.metrics
++# default for supportsparse is false
++*.sink.ganglia.supportsparse=true
++
++.sink.ganglia.slope=jvm.metrics.gcCount=zero,jvm.metrics.memHeapUsedM=both
++.sink.ganglia.dmax=jvm.metrics.threadsBlocked=70,jvm.metrics.memHeapUsedM=40
++
++hbase.sink.ganglia.servers=cn036.l42scl.hortonworks.com:8660
+diff -rupN /grid/1/ndimiduk/hbase/conf/hbase-env.sh bucket-offheap-8g/hbase-env.sh
+--- /grid/1/ndimiduk/hbase/conf/hbase-env.sh	2013-12-30 13:19:18.382255818 -0800
++++ bucket-offheap-8g/hbase-env.sh	2014-01-09 16:57:00.000000000 -0800
+@@ -1,131 +1,79 @@
+ #
+-#/**
+-# * Copyright 2007 The Apache Software Foundation
+-# *
+-# * Licensed to the Apache Software Foundation (ASF) under one
+-# * or more contributor license agreements.  See the NOTICE file
+-# * distributed with this work for additional information
+-# * regarding copyright ownership.  The ASF licenses this file
+-# * to you under the Apache License, Version 2.0 (the
+-# * "License"); you may not use this file except in compliance
+-# * with the License.  You may obtain a copy of the License at
+-# *
+-# *     http://www.apache.org/licenses/LICENSE-2.0
+-# *
+-# * Unless required by applicable law or agreed to in writing, software
+-# * distributed under the License is distributed on an "AS IS" BASIS,
+-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# * See the License for the specific language governing permissions and
+-# * limitations under the License.
+-# */
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements. See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership. The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License. You may obtain a copy of the License at
++#
++# http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
+ 
+ # Set environment variables here.
+ 
+-# This script sets variables multiple times over the course of starting an hbase process,
+-# so try to keep things idempotent unless you want to take an even deeper look
+-# into the startup scripts (bin/hbase, etc.)
++# The java implementation to use. Java 1.6 required.
++export JAVA_HOME=/usr/jdk64/jdk1.6.0_31
+ 
+-# The java implementation to use.  Java 1.6 required.
+-# export JAVA_HOME=/usr/java/jdk1.6.0/
++# HBase Configuration directory
++export HBASE_CONF_DIR=${HBASE_CONF_DIR:-/etc/hbase/conf}
+ 
+-# Extra Java CLASSPATH elements.  Optional.
+-# export HBASE_CLASSPATH=
++# Extra Java CLASSPATH elements. Optional.
++export HBASE_CLASSPATH=${HBASE_CLASSPATH}
+ 
+ # The maximum amount of heap to use, in MB. Default is 1000.
+ # export HBASE_HEAPSIZE=1000
+ 
+ # Extra Java runtime options.
+-# Below are what we set by default.  May only work with SUN JVM.
++# Below are what we set by default. May only work with SUN JVM.
+ # For more on why as well as other possible settings,
+ # see http://wiki.apache.org/hadoop/PerformanceTuning
+-export HBASE_OPTS="-XX:+UseConcMarkSweepGC"
+-
+-# Uncomment one of the below three options to enable java garbage collection logging for the server-side processes.
+-
+-# This enables basic gc logging to the .out file.
+-# export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
+-
+-# This enables basic gc logging to its own file.
+-# If FILE-PATH is not replaced, the log file(.gc) would still be generated in the HBASE_LOG_DIR .
+-# export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<FILE-PATH>"
+-
+-# This enables basic GC logging to its own file with automatic log rolling. Only applies to jdk 1.6.0_34+ and 1.7.0_2+.
+-# If FILE-PATH is not replaced, the log file(.gc) would still be generated in the HBASE_LOG_DIR .
+-# export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<FILE-PATH> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=1 -XX:GCLogFileSize=512M"
+-
+-# Uncomment one of the below three options to enable java garbage collection logging for the client processes.
+-
+-# This enables basic gc logging to the .out file.
+-# export CLIENT_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
+-
+-# This enables basic gc logging to its own file.
+-# If FILE-PATH is not replaced, the log file(.gc) would still be generated in the HBASE_LOG_DIR .
+-# export CLIENT_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<FILE-PATH>"
+-
+-# This enables basic GC logging to its own file with automatic log rolling. Only applies to jdk 1.6.0_34+ and 1.7.0_2+.
+-# If FILE-PATH is not replaced, the log file(.gc) would still be generated in the HBASE_LOG_DIR .
+-# export CLIENT_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<FILE-PATH> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=1 -XX:GCLogFileSize=512M"
+-
+-# Uncomment below if you intend to use the EXPERIMENTAL off heap cache.
+-# export HBASE_OPTS="$HBASE_OPTS -XX:MaxDirectMemorySize="
+-# Set hbase.offheapcache.percentage in hbase-site.xml to a nonzero value.
+-
++export HBASE_OPTS="-XX:+UseConcMarkSweepGC -XX:ErrorFile=/grid/0/var/log/hbase/hs_err_pid%p.log"
++export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
++# Uncomment below to enable java garbage collection logging.
++# export HBASE_OPTS="$HBASE_OPTS -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$HBASE_HOME/logs/gc-hbase.log"
+ 
+ # Uncomment and adjust to enable JMX exporting
+ # See jmxremote.password and jmxremote.access in $JRE_HOME/lib/management to configure remote password access.
+ # More details at: http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html
+ #
+ # export HBASE_JMX_BASE="-Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+-# export HBASE_MASTER_OPTS="$HBASE_MASTER_OPTS $HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10101"
+-# export HBASE_REGIONSERVER_OPTS="$HBASE_REGIONSERVER_OPTS $HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10102"
+-# export HBASE_THRIFT_OPTS="$HBASE_THRIFT_OPTS $HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10103"
+-# export HBASE_ZOOKEEPER_OPTS="$HBASE_ZOOKEEPER_OPTS $HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10104"
+-# export HBASE_REST_OPTS="$HBASE_REST_OPTS $HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10105"
+-
+-# File naming hosts on which HRegionServers will run.  $HBASE_HOME/conf/regionservers by default.
+-# export HBASE_REGIONSERVERS=${HBASE_HOME}/conf/regionservers
+-
+-# Uncomment and adjust to keep all the Region Server pages mapped to be memory resident
+-#HBASE_REGIONSERVER_MLOCK=true
+-#HBASE_REGIONSERVER_UID="hbase"
++export HBASE_MASTER_OPTS="-Xmx1024m"
++export HBASE_REGIONSERVER_OPTS="-Xmn200m -XX:CMSInitiatingOccupancyFraction=70  -Xms1024m -Xmx2000m -XX:MaxDirectMemorySize=6064m -Xloggc:/grid/0/var/log/hbase/rs.gc.log-`date +'%Y%m%d%H%M'`"
++# export HBASE_THRIFT_OPTS="$HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10103"
++# export HBASE_ZOOKEEPER_OPTS="$HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10104"
+ 
+-# File naming hosts on which backup HMaster will run.  $HBASE_HOME/conf/backup-masters by default.
+-# export HBASE_BACKUP_MASTERS=${HBASE_HOME}/conf/backup-masters
++# File naming hosts on which HRegionServers will run. $HBASE_HOME/conf/regionservers by default.
++export HBASE_REGIONSERVERS=${HBASE_CONF_DIR}/regionservers
+ 
+-# Extra ssh options.  Empty by default.
++# Extra ssh options. Empty by default.
+ # export HBASE_SSH_OPTS="-o ConnectTimeout=1 -o SendEnv=HBASE_CONF_DIR"
+ 
+-# Where log files are stored.  $HBASE_HOME/logs by default.
+-# export HBASE_LOG_DIR=${HBASE_HOME}/logs
+-
+-# Enable remote JDWP debugging of major HBase processes. Meant for Core Developers 
+-# export HBASE_MASTER_OPTS="$HBASE_MASTER_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8070"
+-# export HBASE_REGIONSERVER_OPTS="$HBASE_REGIONSERVER_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8071"
+-# export HBASE_THRIFT_OPTS="$HBASE_THRIFT_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8072"
+-# export HBASE_ZOOKEEPER_OPTS="$HBASE_ZOOKEEPER_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8073"
++# Where log files are stored. $HBASE_HOME/logs by default.
++export HBASE_LOG_DIR=/grid/0/var/log/hbase
+ 
+ # A string representing this instance of hbase. $USER by default.
+ # export HBASE_IDENT_STRING=$USER
+ 
+-# The scheduling priority for daemon processes.  See 'man nice'.
++# The scheduling priority for daemon processes. See 'man nice'.
+ # export HBASE_NICENESS=10
+ 
+ # The directory where pid files are stored. /tmp by default.
+-# export HBASE_PID_DIR=/var/hadoop/pids
++export HBASE_PID_DIR=/grid/0/var/run/hbase
+ 
+-# Seconds to sleep between slave commands.  Unset by default.  This
++# Seconds to sleep between slave commands. Unset by default. This
+ # can be useful in large clusters, where, e.g., slave rsyncs can
+ # otherwise arrive faster than the master can service them.
+ # export HBASE_SLAVE_SLEEP=0.1
+ 
+ # Tell HBase whether it should manage it's own instance of Zookeeper or not.
+-# export HBASE_MANAGES_ZK=true
++export HBASE_MANAGES_ZK=false
++
++
+ 
+-# The default log rolling policy is RFA, where the log file is rolled as per the size defined for the 
+-# RFA appender. Please refer to the log4j.properties file to see more details on this appender.
+-# In case one needs to do log rolling on a date change, one should set the environment property
+-# HBASE_ROOT_LOGGER to "<DESIRED_LOG LEVEL>,DRFA".
+-# For example:
+-# HBASE_ROOT_LOGGER=INFO,DRFA
+-# The reason for changing default to RFA is to avoid the boundary case of filling out disk space as 
+-# DRFA doesn't put any cap on the log size. Please refer to HBase-5655 for more context.
+diff -rupN /grid/1/ndimiduk/hbase/conf/hbase-site.xml bucket-offheap-8g/hbase-site.xml
+--- /grid/1/ndimiduk/hbase/conf/hbase-site.xml	2013-12-30 13:19:18.382255818 -0800
++++ bucket-offheap-8g/hbase-site.xml	2014-01-09 17:07:35.011277860 -0800
+@@ -1,24 +1,129 @@
+-<?xml version="1.0"?>
+-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+-<!--
+-/**
+- *
+- * Licensed to the Apache Software Foundation (ASF) under one
+- * or more contributor license agreements.  See the NOTICE file
+- * distributed with this work for additional information
+- * regarding copyright ownership.  The ASF licenses this file
+- * to you under the Apache License, Version 2.0 (the
+- * "License"); you may not use this file except in compliance
+- * with the License.  You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+--->
+-<configuration>
+-</configuration>
++<!--Thu Dec 26 11:46:13 2013-->
++  <configuration>
++    <property>
++    <name>hbase.tmp.dir</name>
++    <value>/grid/0/hadoop/hbase</value>
++  </property>
++    <property>
++    <name>zookeeper.znode.parent</name>
++    <value>/hbase-unsecure</value>
++  </property>
++    <property>
++    <name>hbase.defaults.for.version.skip</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>hbase.hstore.flush.retries.number</name>
++    <value>120</value>
++  </property>
++    <property>
++    <name>hbase.hregion.memstore.mslab.enabled</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>hbase.hregion.memstore.block.multiplier</name>
++    <value>2</value>
++  </property>
++  <property>
++    <!-- 2000m * 0.8 = 1600m -->
++    <name>hbase.regionserver.global.memstore.upperLimit</name>
++    <value>0.79</value>
++  </property>
++  <property>
++    <!-- 2000m * 0.72 = 1440m -->
++    <name>hbase.regionserver.global.memstore.lowerLimit</name>
++    <value>0.72</value>
++  </property>
++    <property>
++    <name>zookeeper.session.timeout</name>
++    <value>30000</value>
++  </property>
++    <property>
++    <name>hbase.rootdir</name>
++    <value>hdfs://cn036.l42scl.hortonworks.com:8020/apps/hbase/data</value>
++  </property>
++    <property>
++    <name>hbase.client.scanner.caching</name>
++    <value>100</value>
++  </property>
++    <property>
++    <name>hbase.zookeeper.quorum</name>
++    <value>cn036.l42scl.hortonworks.com</value>
++  </property>
++  <property>
++    <!-- mostly disable LruBlockCache -->
++    <name>hfile.block.cache.size</name>
++    <value>0.01</value>
++  </property>
++  <property>
++    <!-- disable slabcache -->
++    <name>hbase.offheapcachesize</name>
++    <value>0</value>
++  </property>
++  <property>
++    <name>hbase.bucketcache.ioengine</name>
++    <value>offheap</value>
++  </property>
++  <property>
++    <!-- minimize the size of the LruBlockCache instance forced upon us -->
++    <name>hbase.bucketcache.percentage.in.combinedcache</name>
++    <value>0.99</value>
++  </property>
++  <property>
++    <!-- 8000m * 0.6 = 4800m -->
++    <name>hbase.bucketcache.size</name>
++    <value>4800</value>
++  </property>
++  <property>
++    <name>hbase.hstore.compactionThreshold</name>
++    <value>3</value>
++  </property>
++    <property>
++    <name>hbase.client.keyvalue.maxsize</name>
++    <value>10485760</value>
++  </property>
++    <property>
++    <name>hbase.hregion.majorcompaction</name>
++    <value>86400000</value>
++  </property>
++    <property>
++    <name>hbase.zookeeper.useMulti</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>hbase.hregion.memstore.flush.size</name>
++    <value>134217728</value>
++  </property>
++    <property>
++    <name>hbase.security.authorization</name>
++    <value>false</value>
++  </property>
++    <property>
++    <name>hbase.cluster.distributed</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>hbase.zookeeper.property.clientPort</name>
++    <value>2181</value>
++  </property>
++    <property>
++    <name>hbase.hregion.max.filesize</name>
++    <value>10737418240</value>
++  </property>
++    <property>
++    <name>hbase.hstore.blockingStoreFiles</name>
++    <value>10</value>
++  </property>
++    <property>
++    <name>hbase.security.authentication</name>
++    <value>simple</value>
++  </property>
++    <property>
++    <name>hbase.regionserver.handler.count</name>
++    <value>60</value>
++  </property>
++    <property>
++    <name>hbase.superuser</name>
++    <value>hbase</value>
++  </property>
++  </configuration>
+diff -rupN /grid/1/ndimiduk/hbase/conf/hdfs-site.xml bucket-offheap-8g/hdfs-site.xml
+--- /grid/1/ndimiduk/hbase/conf/hdfs-site.xml	1969-12-31 16:00:00.000000000 -0800
++++ bucket-offheap-8g/hdfs-site.xml	2014-01-09 11:33:22.936236223 -0800
+@@ -0,0 +1,179 @@
++<!--Thu Dec 26 11:46:13 2013-->
++  <configuration>
++    <property>
++    <name>dfs.journalnode.http-address</name>
++    <value>0.0.0.0:8480</value>
++  </property>
++    <property>
++    <name>dfs.namenode.checkpoint.period</name>
++    <value>21600</value>
++  </property>
++    <property>
++    <name>dfs.replication.max</name>
++    <value>50</value>
++  </property>
++    <property>
++    <name>dfs.datanode.data.dir</name>
++    <value>/grid/0/hadoop/hdfs/data,/grid/1/hadoop/hdfs/data,/grid/2/hadoop/hdfs/data,/grid/3/hadoop/hdfs/data,/grid/4/hadoop/hdfs/data,/grid/5/hadoop/hdfs/data</value>
++  </property>
++    <property>
++    <name>dfs.namenode.checkpoint.edits.dir</name>
++    <value>${dfs.namenode.checkpoint.dir}</value>
++  </property>
++    <property>
++    <name>dfs.namenode.name.dir</name>
++    <value>/grid/0/hadoop/hdfs/namenode,/grid/1/hadoop/hdfs/namenode,/grid/2/hadoop/hdfs/namenode,/grid/3/hadoop/hdfs/namenode,/grid/4/hadoop/hdfs/namenode,/grid/5/hadoop/hdfs/namenode</value>
++  </property>
++    <property>
++    <name>dfs.namenode.secondary.http-address</name>
++    <value>cn036.l42scl.hortonworks.com:50090</value>
++  </property>
++    <property>
++    <name>dfs.namenode.avoid.read.stale.datanode</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>dfs.replication</name>
++    <value>1</value>
++  </property>
++    <property>
++    <name>dfs.permissions.enabled</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>dfs.https.port</name>
++    <value>50470</value>
++  </property>
++    <property>
++    <name>dfs.namenode.safemode.threshold-pct</name>
++    <value>1.0f</value>
++  </property>
++    <property>
++    <name>dfs.datanode.balance.bandwidthPerSec</name>
++    <value>6250000</value>
++  </property>
++    <property>
++    <name>fs.permissions.umask-mode</name>
++    <value>022</value>
++  </property>
++    <property>
++    <name>dfs.webhdfs.enabled</name>
++    <value>false</value>
++  </property>
++    <property>
++    <name>dfs.client.read.shortcircuit.streams.cache.size</name>
++    <value>4096</value>
++  </property>
++    <property>
++    <name>dfs.namenode.http-address</name>
++    <value>cn036.l42scl.hortonworks.com:50070</value>
++  </property>
++    <property>
++    <name>dfs.datanode.data.dir.perm</name>
++    <value>750</value>
++  </property>
++    <property>
++    <name>fs.checkpoint.size</name>
++    <value>67108864</value>
++  </property>
++    <property>
++    <name>dfs.client.read.shortcircuit</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>dfs.support.append</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>dfs.namenode.checkpoint.dir</name>
++    <value>/grid/0/hadoop/hdfs/namesecondary</value>
++  </property>
++    <property>
++    <name>dfs.namenode.https-address</name>
++    <value>cn036.l42scl.hortonworks.com:50470</value>
++  </property>
++    <property>
++    <name>dfs.datanode.ipc.address</name>
++    <value>0.0.0.0:8010</value>
++  </property>
++    <property>
++    <name>dfs.datanode.http.address</name>
++    <value>0.0.0.0:50075</value>
++  </property>
++    <property>
++    <name>dfs.namenode.handler.count</name>
++    <value>100</value>
++  </property>
++    <property>
++    <name>dfs.blockreport.initialDelay</name>
++    <value>120</value>
++  </property>
++    <property>
++    <name>dfs.datanode.du.reserved</name>
++    <value>1073741824</value>
++  </property>
++    <property>
++    <name>dfs.namenode.stale.datanode.interval</name>
++    <value>30000</value>
++  </property>
++    <property>
++    <name>dfs.domain.socket.path</name>
++    <value>/grid/0/var/lib/hadoop-hdfs/dn_socket</value>
++  </property>
++    <property>
++    <name>dfs.block.access.token.enable</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>dfs.heartbeat.interval</name>
++    <value>3</value>
++  </property>
++    <property>
++    <name>dfs.hosts.exclude</name>
++    <value>/etc/hadoop/conf/dfs.exclude</value>
++  </property>
++    <property>
++    <name>dfs.datanode.failed.volumes.tolerated</name>
++    <value>0</value>
++  </property>
++    <property>
++    <name>dfs.namenode.name.dir.restore</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>dfs.permissions.superusergroup</name>
++    <value>hdfs</value>
++  </property>
++    <property>
++    <name>dfs.datanode.max.transfer.threads</name>
++    <value>1024</value>
++  </property>
++    <property>
++    <name>dfs.namenode.avoid.write.stale.datanode</name>
++    <value>true</value>
++  </property>
++    <property>
++    <name>dfs.datanode.address</name>
++    <value>0.0.0.0:50010</value>
++  </property>
++    <property>
++    <name>dfs.journalnode.edits.dir</name>
++    <value>/grid/0/hdfs/journal</value>
++  </property>
++    <property>
++    <name>dfs.namenode.accesstime.precision</name>
++    <value>0</value>
++  </property>
++    <property>
++    <name>dfs.cluster.administrators</name>
++    <value> hdfs</value>
++  </property>
++    <property>
++    <name>dfs.blocksize</name>
++    <value>134217728</value>
++  </property>
++    <property>
++    <name>dfs.namenode.write.stale.datanode.ratio</name>
++    <value>1.0f</value>
++  </property>
++  </configuration>
+\ No newline at end of file
+diff -rupN /grid/1/ndimiduk/hbase/conf/regionservers bucket-offheap-8g/regionservers
+--- /grid/1/ndimiduk/hbase/conf/regionservers	2013-12-30 13:19:18.382255818 -0800
++++ bucket-offheap-8g/regionservers	2014-01-09 11:33:23.249236170 -0800
+@@ -1 +1 @@
+-localhost
++cn036.l42scl.hortonworks.com

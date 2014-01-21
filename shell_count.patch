@@ -1,0 +1,13 @@
+diff --git a/hbase-shell/src/main/ruby/hbase/table.rb b/hbase-shell/src/main/ruby/hbase/table.rb
+index ef1cee7..62f30ff 100644
+--- a/hbase-shell/src/main/ruby/hbase/table.rb
++++ b/hbase-shell/src/main/ruby/hbase/table.rb
+@@ -220,7 +220,7 @@ EOF
+     def _count_internal(interval = 1000, caching_rows = 10)
+       # We can safely set scanner caching with the first key only filter
+       scan = org.apache.hadoop.hbase.client.Scan.new
+-      scan.cache_blocks = false
++      scan.cache_blocks = true
+       scan.caching = caching_rows
+       scan.setFilter(org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter.new)
+ 

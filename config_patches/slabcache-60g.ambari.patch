@@ -1,0 +1,68 @@
+diff -rupN /etc/hbase/conf/hbase-env.sh slabcache-60g/hbase-env.sh
+--- /etc/hbase/conf/hbase-env.sh	2013-12-23 14:36:33.457359492 -0800
++++ slabcache-60g/hbase-env.sh	2014-01-07 16:24:19.556548931 -0800
+@@ -35,7 +35,7 @@ export HBASE_CLASSPATH=${HBASE_CLASSPATH
+ # For more on why as well as other possible settings,
+ # see http://wiki.apache.org/hadoop/PerformanceTuning
+ export HBASE_OPTS="-XX:+UseConcMarkSweepGC -XX:ErrorFile=/grid/0/var/log/hbase/hs_err_pid%p.log"
+-export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/grid/0/var/log/hbase/gc.log-`date +'%Y%m%d%H%M'`"
++export SERVER_GC_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
+ # Uncomment below to enable java garbage collection logging.
+ # export HBASE_OPTS="$HBASE_OPTS -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:$HBASE_HOME/logs/gc-hbase.log"
+ 
+@@ -45,7 +45,7 @@ export SERVER_GC_OPTS="-verbose:gc -XX:+
+ #
+ # export HBASE_JMX_BASE="-Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+ export HBASE_MASTER_OPTS="-Xmx1024m"
+-export HBASE_REGIONSERVER_OPTS="-Xmn200m -XX:CMSInitiatingOccupancyFraction=70  -Xms1024m -Xmx1024m"
++export HBASE_REGIONSERVER_OPTS="-Xmn200m -XX:CMSInitiatingOccupancyFraction=70  -Xms1024m -Xmx15000m -XX:MaxDirectMemorySize=45064m -Xloggc:/grid/0/var/log/hbase/rs.gc.log-`date +'%Y%m%d%H%M'`"
+ # export HBASE_THRIFT_OPTS="$HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10103"
+ # export HBASE_ZOOKEEPER_OPTS="$HBASE_JMX_BASE -Dcom.sun.management.jmxremote.port=10104"
+ 
+diff -rupN /etc/hbase/conf/hbase-site.xml slabcache-60g/hbase-site.xml
+--- /etc/hbase/conf/hbase-site.xml	2013-12-26 11:46:17.657234813 -0800
++++ slabcache-60g/hbase-site.xml	2013-12-30 15:48:03.941251098 -0800
+@@ -24,15 +24,22 @@
+     <name>hbase.hregion.memstore.block.multiplier</name>
+     <value>2</value>
+   </property>
+-    <property>
++  <property>
++    <!-- 15000m * 0.8 = 12000m -->
+     <name>hbase.regionserver.global.memstore.upperLimit</name>
+-    <value>0.4</value>
++    <value>0.79</value>
+   </property>
+-    <property>
++  <property>
++    <!-- 15000m * 0.72 = 10800m -->
+     <name>hbase.regionserver.global.memstore.lowerLimit</name>
+-    <value>0.38</value>
++    <value>0.72</value>
+   </property>
+-    <property>
++  <property>
++    <!-- 45064m * 0.8 = 36051m -->
++    <name>hbase.offheapcache.percentage</name>
++    <value>0.80</value>
++  </property>
++  <property>
+     <name>zookeeper.session.timeout</name>
+     <value>30000</value>
+   </property>
+@@ -50,7 +57,7 @@
+   </property>
+     <property>
+     <name>hfile.block.cache.size</name>
+-    <value>0.40</value>
++    <value>0.01</value>
+   </property>
+     <property>
+     <name>hbase.hstore.compactionThreshold</name>
+@@ -104,4 +111,4 @@
+     <name>hbase.superuser</name>
+     <value>hbase</value>
+   </property>
+-  </configuration>
+\ No newline at end of file
++  </configuration>
