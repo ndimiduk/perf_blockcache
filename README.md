@@ -56,3 +56,10 @@ archive ending in `-summary.txt`, something like
 'bucket-offheap-8g-12.txt-summary.txt'. `dumpstats.py` is also controlled by
 environment variable, so you can set `$LOGS_HOME` or just run from the `runs`
 directory containing all the archives.
+
+## License
+
+Licensed under the Apache License, Version 2.0, the same as HBase uses. See
+[LICENSE.txt][0] for details.
+
+[0]: https://raw.github.com/ndimiduk/perf_blockcache/master/LICENSE.txt
