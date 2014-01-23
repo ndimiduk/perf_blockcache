@@ -3,7 +3,7 @@
 Automation scripts for comparing different HBase `BlockCache` implementations.
 It uses the `PerformanceEvaluation` tool to submit queries against the HBase
 RegionServer and collects their reported response latencies. Nothing in this
-harness is specific to `BlocCache` -- any configurations can be tested
+harness is specific to `BlockCache` -- any configurations can be tested
 side-by-side. However, more work is needed to test other attributes of the
 system.
 
@@ -15,6 +15,9 @@ The latter does the work of launching HBase with a specific configuration,
 populating the test table, running the test, and collecting up the logs.
 Everything assumes it's running on a single node deployment, so there's no
 fancy log collection or aggregation across multiple hosts.
+
+Instructions for installing the python dependencies are provided in
+[python.md][python].
 
 To run the full suite of tests, create a config directory for each
 configuration you want to test. The scripts assume these all share the same
@@ -63,3 +66,4 @@ Licensed under the Apache License, Version 2.0, the same as HBase uses. See
 [LICENSE.txt][0] for details.
 
 [0]: https://raw.github.com/ndimiduk/perf_blockcache/master/LICENSE.txt
+[python]: https://github.com/ndimiduk/perf_blockcache/blob/master/python.md
